@@ -1,0 +1,18 @@
+<!-- ajgar_launch_file.launch -->
+
+<launch>
+
+  <!-- Start ROS core -->
+  <node name="roscore" pkg="ros" type="roscore" output="screen"/>
+
+  <!-- Start ROSBridge server -->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+
+  <!-- Launch moveit -->
+  <include file="$(find ajgar_core)/launch/ajgar_moveit.launch"/>
+
+  <!-- Run new_ik_solver.py -->
+  <node name="new_ik_solver_node" pkg="ajgar_core" type="new_ik_solver.py" output="screen"/>
+
+
+</launch>

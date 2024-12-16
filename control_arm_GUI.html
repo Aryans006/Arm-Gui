@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6 DOF Arm Control</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            margin: 20px;
+            transition: background-color 0.5s, color 0.5s;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #3498db;
+            padding: 10px;
+            border-bottom: 2px solid #2980b9;
+            box-shadow: 0 4px 2px -2px gray;
+        }
+
+        h1 {
+            color: #ecf0f1;
+            border-radius: 5px;
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        .theme-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+
+        .theme-buttons button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            border: none;
+            font-size: 1.2em;
+        }
+
+        .theme-buttons button:hover {
+            transform: scale(1.1);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            color: #333;
+            transition: box-shadow 0.3s;
+        }
+
+        .joint-slider {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        label {
+            margin-bottom: 5px;
+            color: #555;
+            display: block;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 15px;
+            background-color: #ddd;
+            border-radius: 5px;
+            outline: none;
+            margin: 15px 0;
+            transition: background-color 0.3s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            background-color: #3498db;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            margin-top: -7px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        input[type="range"]:hover::-webkit-slider-thumb {
+            background-color: #2980b9;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        input[type="range"]:focus::-webkit-slider-thumb {
+            background-color: #2980b9;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+        }
+
+        .degrees-radians {
+            margin-top: 10px;
+            color: #777;
+            font-size: 0.8em;
+        }
+
+        body.dark-theme {
+            background-color: #2c3e50;
+            color: #fff;
+        }
+
+        .dark-theme h1 {
+            color: #fff;
+        }
+
+        .dark-theme form,
+        .dark-theme .degrees-radians,
+        .dark-theme .camera-feed h1 {
+            color: #fff;
+        }
+
+        .dark-theme input[type="range"],
+        .dark-theme label {
+            color: #fff !important;
+        }
+
+        .dark-theme input[type="range"]::-webkit-slider-thumb {
+            background-color: #fff !important;
+        }
+
+        .dark-theme input[type="range"]::-moz-range-thumb {
+            background-color: #fff !important;
+        }
+
+        .dark-theme input[type="range"]::-ms-thumb {
+            background-color: #fff !important;
+        }
+
+        .dark-theme .camera-feed img {
+            filter: brightness(100%);
+        }
+
+        footer {
+            margin-top: 20px;
+            color: #51abe7;
+            border-top: 2px solid #ddd;
+            padding-top: 10px;
+            position: relative;
+            font-size: 0.9em;
+        }
+
+        footer img {
+            width: 40px;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        footer a {
+            color: #3498db;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+
+        .control-panel,
+        .camera-feed {
+            width: 48%;
+            transition: transform 0.3s;
+        }
+
+        .control-panel:hover,
+        .camera-feed:hover {
+            transform: scale(1.02);
+        }
+
+        .camera-feed h1 {
+            color: #777;
+        }
+
+        .camera-feed img {
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: #fff;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .button-group button:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+    </style>
+    <script type="text/javascript" src="roslib.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <h1>6 DOF Arm Control</h1>
+        <div class="theme-buttons">
+            <button class="theme-button sun" onclick="setLightTheme()">&#9728;</button>
+            <button class="theme-button moon" onclick="setDarkTheme()">&#9790;</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="control-panel">
+            <form id="controlForm">
+
+                <!-- Joint 1 -->
+                <div class="joint-slider">
+                    <label for="joint1">Base:</label>
+                    <input type="range" id="joint1" name="joint1" min="-180" max="180" step="1" value="0"
+                        oninput="updateSliderValue('joint1', 'joint1Value', 'joint1Radians');">
+                    <span id="joint1Value">0</span>
+                    <div id="joint1Radians" class="degrees-radians">(0 rad)</div>
+                </div>
+
+                <!-- Joint 2 -->
+                <div class="joint-slider">
+                    <label for="joint2">Shoulder Joint:</label>
+                    <input type="range" id="joint2" name="joint2" min="-134" max="124" step="1" value="0"
+                        oninput="updateSliderValue('joint2', 'joint2Value', 'joint2Radians');">
+                    <span id="joint2Value">0</span>
+                    <div id="joint2Radians" class="degrees-radians">(0 rad)</div>
+                </div>
+
+                <!-- Joint 3 -->
+                <div class="joint-slider">
+                    <label for="joint3">Elbow Joint:</label>
+                    <input type="range" id="joint3" name="joint3" min="-160" max="160" step="1" value="0"
+                        oninput="updateSliderValue('joint3', 'joint3Value', 'joint3Radians');">
+                    <span id="joint3Value">0</span>
+                    <div id="joint3Radians" class="degrees-radians">(0 rad)</div>
+                </div>
+
+                <!-- Joint 4 -->
+                <div class="joint-slider">
+                    <label for="joint4">Lower Wrist:</label>
+                    <input type="range" id="joint4" name="joint4" min="-180" max="180" step="1" value="0"
+                        oninput="updateSliderValue('joint4', 'joint4Value', 'joint4Radians');">
+                    <span id="joint4Value">0</span>
+                    <div id="joint4Radians" class="degrees-radians">(0 rad)</div>
+                </div>
+
+                <!-- Joint 5 -->
+                <div class="joint-slider">
+                    <label for="joint5">Upper Wrist:</label>
+                    <input type="range" id="joint5" name="joint5" min="-148" max="48" step="1" value="0"
+                        oninput="updateSliderValue('joint5', 'joint5Value', 'joint5Radians');">
+                    <span id="joint5Value">0</span>
+                    <div id="joint5Radians" class="degrees-radians">(0 rad)</div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" onclick="resetSliders()">Reset</button>
+                    <button type="button" onclick="randomizeSliders()">Randomize</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="camera-feed">
+            <h1 style="margin-top: 20px; margin-bottom: 20px;">Camera Feed</h1>
+            <img id="image" src="" width="90%" height="auto" />
+            <div class="button-group">
+                <button type="button" onclick="attach()">Attach</button>
+                <button type="button" onclick="detach()">Detach</button>
+            </div>
+        </div>
+        
+    </div>
+
+    <footer>
+        Developed by A.T.O.M Robotics Labs
+        <img src="/logo.png" alt="Logo">
+        <br>
+        <a href="https://github.com/atom-robotics-lab" target="_blank">GitHub</a>
+        <a href="https://atom-robotics-lab.github.io/" target="_blank">Website</a>
+    </footer>
+
+    <script type="text/javascript">
+
+        const ros = new ROSLIB.Ros({
+            url: 'ws://localhost:9090'
+        });
+
+        ros.on('connection', function () {
+            console.log('Connected to ROS');
+        });
+
+        ros.on('error', function (error) {
+            console.error('Error connecting to ROS:', error);
+        });
+
+        ros.on('close', function () {
+            console.log('Connection to ROS closed');
+        });
+
+        const rosTopic = new ROSLIB.Topic({
+            ros: ros,
+            name: '/slider',
+            messageType: 'std_msgs/Float64MultiArray'
+        });
+
+        const attachDetachTopic = new ROSLIB.Topic({
+            ros: ros,
+            name: '/attach_detach',
+            messageType: 'std_msgs/Bool'
+        });
+
+        const listener = new ROSLIB.Topic({
+            ros: ros,
+            name: '/kinect/color/image_raw/compressed',
+            messageType: 'sensor_msgs/CompressedImage'
+        });
+
+        listener.subscribe(function (message) {
+            var img = document.getElementById('image');
+            img.src = 'data:image/jpeg;base64,' + message.data;
+        });
+
+        function publishJointAngles(angles) {
+            const message = new ROSLIB.Message({
+                data: angles
+            });
+            rosTopic.publish(message);
+        }
+
+        function setLightTheme() {
+            document.body.classList.remove('dark-theme');
+            updateStyles();
+        }
+
+        function setDarkTheme() {
+            document.body.classList.add('dark-theme');
+            updateStyles();
+        }
+
+        let lastPublishedValues = Array.from({ length: 5 }, () => 0);
+        let publishTimeout;
+        let lastPublishedTime = 0;
+
+        function updateSliderValue(sliderId, valueId, radiansId) {
+            const slider = document.getElementById(sliderId);
+            const valueLabel = document.getElementById(valueId);
+            const radiansLabel = document.getElementById(radiansId);
+            const degrees = slider.value;
+            const radians = (degrees * Math.PI) / 180;
+
+            valueLabel.textContent = degrees;
+            radiansLabel.textContent = `(${degrees}° = ${radians.toFixed(2)} rad)`;
+
+            const jointAngles = Array.from(document.querySelectorAll('.joint-slider input')).map(s => {
+                const degrees = parseFloat(s.value);
+                return (degrees * Math.PI) / 180;
+            });
+            if (JSON.stringify(jointAngles) !== JSON.stringify(lastPublishedValues)) {
+                clearTimeout(publishTimeout);
+                publishTimeout = setTimeout(() => {
+                    console.log(jointAngles);
+                    publishJointAngles(jointAngles);
+                    lastPublishedValues = jointAngles;
+                }, 800);
+            }
+        }
+
+        function updateStyles() {
+            const isDarkTheme = document.body.classList.contains('dark-theme');
+            const form = document.getElementById('controlForm');
+
+            document.body.style.backgroundColor = isDarkTheme ? '#2c3e50' : '#f0f0f0';
+            document.body.style.color = isDarkTheme ? '#ecf0f1' : '#333';
+
+            form.style.backgroundColor = isDarkTheme ? '#34495e' : '#ecf0f1';
+            form.style.color = isDarkTheme ? '#ecf0f1' : '#333';
+
+            updateSliderStyles();
+        }
+
+        function updateSliderStyles() {
+            const sliders = document.querySelectorAll('input[type="range"]');
+            const isDarkTheme = document.body.classList.contains('dark-theme');
+
+            sliders.forEach(slider => {
+                slider.style.backgroundColor = isDarkTheme ? '#555' : '#f8f8f8';
+                slider.style.color = isDarkTheme ? '#fff' : '#333';
+                slider.style.border = isDarkTheme ? '1px solid #555' : '1px solid #ddd';
+            });
+        }
+
+        function resetSliders() {
+            const sliders = document.querySelectorAll('.joint-slider input[type="range"]');
+            sliders.forEach(slider => {
+                slider.value = 0;
+                const valueId = slider.id + 'Value';
+                const radiansId = slider.id + 'Radians';
+                document.getElementById(valueId).textContent = '0';
+                document.getElementById(radiansId).textContent = '(0 rad)';
+            });
+            publishJointAngles(Array.from({ length: 6 }, () => 0));
+        }
+
+        function randomizeSliders() {
+            const sliders = document.querySelectorAll('.joint-slider input[type="range"]');
+            sliders.forEach(slider => {
+                const randomValue = Math.floor(Math.random() * (parseInt(slider.max) - parseInt(slider.min) + 1)) + parseInt(slider.min);
+                slider.value = randomValue;
+                const valueId = slider.id + 'Value';
+                const radiansId = slider.id + 'Radians';
+                document.getElementById(valueId).textContent = randomValue;
+                document.getElementById(radiansId).textContent = '(' + (randomValue * Math.PI / 180).toFixed(2) + ' rad)';
+            });
+            const jointAngles = Array.from(sliders).map(slider => parseFloat(slider.value) * Math.PI / 180);
+            publishJointAngles(jointAngles);
+        }
+        function attach() {
+            attached = true;
+            publishAttachDetach();
+        }
+
+        function detach() {
+            attached = false;
+            publishAttachDetach();
+        }
+
+        function publishAttachDetach() {
+            const message = new ROSLIB.Message({
+                data: attached
+            });
+            attachDetachTopic.publish(message);
+        }
+
+    </script>
+</body>
+
+</html>
